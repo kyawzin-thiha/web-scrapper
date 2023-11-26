@@ -51,7 +51,7 @@ export class ScraperService {
 
           return {
             title: titleElement ? titleElement.textContent.trim() : "",
-            link: linkElement ? linkElement.getAttribute("href") : "",
+            link: linkElement ? `https://www.fatsoma.com/${linkElement.getAttribute("href")}` : "",
             image: imageUrl,
             date: date ? date.textContent.replace(/\s+/g, " ").trim() : "",
             price: price ? price.textContent.trim() : ""

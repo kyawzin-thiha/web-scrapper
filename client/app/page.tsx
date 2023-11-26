@@ -1,95 +1,91 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client";
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+const getEvents = async (city: string) => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scraper/scrape?city=${city}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    mode: 'cors',
+    cache: "no-cache"
+  })
+
+  if(response.ok) {
+    return await response.json()
+  } else {
+    return []
+  }
+}
 export default function Home() {
+
+  const searchParams = useSearchParams()
+
+  const [loading, setLoading] = useState(false)
+  const [city, setCity] = useState('')
+  const [events, setEvents] = useState<Event[]>([])
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCity(() => e.target.value);
+  }
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    setLoading(() => true);
+    e.preventDefault();
+    const response = await getEvents(city);
+    setEvents(() => response);
+    setLoading(() => false);
+  }
+
+  useEffect(() =>  {
+    const city = searchParams.get('city')
+
+    const fetchEvents = async () => {
+      setLoading(() => true);
+      const response = await getEvents(city || '');
+      setEvents(() => response);
+      setLoading(() => false);
+    };
+
+    if(city) {
+      setCity(() => city)
+      fetchEvents()
+    }
+  }, [])
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
+    <div className='container'>
+      <div className='input-section'>
+        <input type="text" placeholder="Enter something..." className='input-section__input' value={city} onChange={onChange} />
+        <button onClick={handleSubmit} className='input-section__button'>Submit</button>
       </div>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+      <div className='event-grid'>
+        {loading ? <p>Loading...</p> : events.map(event => <EventCard key={event.link} {...event} />)}
       </div>
+    </div>
+  );
+}
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+const EventCard = ({ title, image, date, price, link } : Event) => {
+  return (
+    <div className="event-card">
+      <img src={image} alt={title} className='event-card__image' />
+      <div className='event-card__info'>
+        <h3>{title}</h3>
+        <p>{date}</p>
+        <p>{price}</p>
+        <a href={link} className='event-card__check-more-button'>Check More</a>
       </div>
-    </main>
-  )
+    </div>
+  );
+};
+
+type Event = {
+  title: string;
+  image: string;
+  date: string;
+  price: string;
+  link: string;
 }
